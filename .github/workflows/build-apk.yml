@@ -27,26 +27,33 @@ jobs:
         run: |
           pip install --user buildozer cython
 
-      - name: Pre-install Android SDK build-tools
+      - name: Set up Android SDK manually (work around buildozer shell quoting bug)
         run: |
           export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
           export PATH=$PATH:~/.local/bin
-          yes | ~/.local/bin/buildozer init 2>/dev/null || true
-          # Set ANDROID_HOME for buildozer
-          mkdir -p ~/.buildozer/android/platform/android-sdk
-          # Download cmdline-tools if needed
-          if [ ! -f ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager ]; then
-            mkdir -p ~/.buildozer/android/platform/android-sdk/cmdline-tools
-            cd /tmp
-            curl -sL -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
-            unzip -q cmdline-tools.zip -d cmdline-tools-tmp
-            mv cmdline-tools-tmp/cmdline-tools ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest
-            rm -rf cmdline-tools-tmp cmdline-tools.zip
-          fi
-          # Accept licenses
-          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk --licenses 2>/dev/null || true
-          # Install platform-tools and build-tools (using proper quoting via array)
-          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=$HOME/.buildozer/android/platform/android-sdk "platform-tools" "build-tools;37.0.0" "platforms;android-34" 2>/dev/null || true
+
+          SDK_DIR=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p "$SDK_DIR"
+
+          # Download command-line tools (old layout with tools/bin/sdkmanager)
+          cd /tmp
+          curl -sL -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          unzip -q cmdline-tools.zip
+          # Copy tools/ into SDK_DIR (this gives us tools/bin/sdkmanager)
+          cp -r cmdline-tools/* "$SDK_DIR/"
+          rm -rf cmdline-tools cmdline-tools.zip
+
+          # Accept all licenses
+          yes | "$SDK_DIR/tools/bin/sdkmanager" --sdk_root="$SDK_DIR" --licenses 2>/dev/null || true
+
+          # Install required packages (properly quoted with double quotes)
+          yes | "$SDK_DIR/tools/bin/sdkmanager" --sdk_root="$SDK_DIR" \
+            "platform-tools" \
+            "build-tools;37.0.0" \
+            "platforms;android-34" 2>&1 || true
+
+          echo "SDK setup done"
+          ls -la "$SDK_DIR/build-tools/" || echo "No build-tools dir"
 
       - name: Build APK
         run: |
