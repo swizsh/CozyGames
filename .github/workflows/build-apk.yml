@@ -19,9 +19,9 @@ jobs:
       - name: Install system deps
         run: |
           sudo apt update
-          sudo apt install -y python3-pip python3-venv git zip unzip \
-            openjdk-17-jdk autoconf libtool pkg-config zlib1g-dev \
-            libncurses-dev cmake libffi-dev libssl-dev
+            sudo apt install -y python3-pip python3-venv git zip unzip \
+              openjdk-17-jdk autoconf libtool libtool-bin automake pkg-config zlib1g-dev \
+              libncurses-dev cmake libffi-dev libssl-dev
 
       - name: Install buildozer
         run: |
