@@ -35,12 +35,15 @@ jobs:
           SDK_DIR=$HOME/.buildozer/android/platform/android-sdk
           mkdir -p "$SDK_DIR"
 
-          # Download command-line tools (old layout with tools/bin/sdkmanager)
+          # Download command-line tools
           cd /tmp
           curl -sL -o cmdline-tools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
           unzip -q cmdline-tools.zip
-          # Copy tools/ into SDK_DIR (this gives us tools/bin/sdkmanager)
-          cp -r cmdline-tools/* "$SDK_DIR/"
+
+          # New archive has cmdline-tools/bin/sdkmanager, but buildozer expects tools/bin/sdkmanager
+          mkdir -p "$SDK_DIR/tools/bin"
+          cp cmdline-tools/bin/* "$SDK_DIR/tools/bin/"
+          cp -r cmdline-tools/lib "$SDK_DIR/tools/"
           rm -rf cmdline-tools cmdline-tools.zip
 
           # Accept all licenses
